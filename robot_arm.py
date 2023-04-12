@@ -23,4 +23,14 @@ base_motor.hold()
 gripper_motor.run_until_stalled(200, then=Stop.COAST, duty_limit=50)
 gripper_motor.reset_angle(0)
 gripper_motor.run_target(200, -90)
+elbow_motor.run_until_stalled(-30,then=Stop.BRAKE,duty_limit=20)
+wait(10)
 elbow_motor.reset_angle(0)
+elbow_motor.run_target(60,61.5)
+elbow_motor.reset_angle(0)
+
+def pick_up():
+    elbow_motor.run_target(60,-20)
+    gripper_motor.run_until_stalled(200,then=Stop.HOLD, duty_limit=50)
+    elbow_motor.run_target(60,0)
+
