@@ -34,8 +34,11 @@ def pick_up():
     gripper_motor.run_until_stalled(200,then=Stop.HOLD, duty_limit=50)
     elbow_motor.run_target(60,0)
 
+def read_color():
+    return color_sensor.color()
 
 def drop(position):
     base_motor.run_target(135, position)
     elbow_motor.run_target(60,-28.5)
     gripper_motor.run_target(200,-90)
+
