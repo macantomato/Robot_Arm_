@@ -29,16 +29,45 @@ elbow_motor.reset_angle(0)
 elbow_motor.run_target(60,61.5)
 elbow_motor.reset_angle(0)
 
+
 def pick_up():
     elbow_motor.run_target(60,-28.5)
     gripper_motor.run_until_stalled(200,then=Stop.HOLD, duty_limit=50)
     elbow_motor.run_target(60,0)
 
+
 def read_color():
-    return color_sensor.color()
+    rgb = color_sensor.rgb()
+    return rgb_to_color(rgb)
+
+def rgb_to_color(rgb):
+    if rgb[0] > (rgb[1] + rgb[2]) / 2:
+        if (rgb[0] + rgb[1]) > (2 * (rgb[0] + rgb[1] + rgb[2])) / 3 and (rgb[0] - rgb[1]) < 7:
+            return "YELLOW"
+        return "RED"
+    elif rgb[1] > (rgb[0] + rgb[2]) / 2:
+        return "GREEN"
+    elif rgb[2] > (rgb[0] + rgb[1]) / 2:
+        return "BLUE"
+    return "None"
+
 
 def drop(position):
+    #move claw to position
     base_motor.run_target(135, position)
     elbow_motor.run_target(60,-28.5)
+
+    #drop brick
     gripper_motor.run_target(200,-90)
 
+    #reset claw position
+    elbow_motor.run_target(60,0)
+    base_motor.run_target(135, 0)
+
+
+while True:
+    input("\nPress ENTER to pick up")
+    pick_up()
+    print("Color: " + read_color())
+    pos = int(input("Drop at position: "))
+    drop(pos)
