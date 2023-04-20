@@ -30,8 +30,11 @@ elbow_motor.run_target(60,61.5)
 elbow_motor.reset_angle(0)
 
 
-def pick_up():
-    elbow_motor.run_target(60,-28.5)
+def pick_up(position):
+    #move claw to position
+    base_motor.run_target(135, position)
+
+    elbow_motor.run_target(60,-29)
     gripper_motor.run_until_stalled(200,then=Stop.HOLD, duty_limit=50)
     elbow_motor.run_target(60,0)
 
@@ -42,7 +45,7 @@ def read_color():
 
 def rgb_to_color(rgb):
     if rgb[0] > (rgb[1] + rgb[2]) / 2:
-        if (rgb[0] + rgb[1]) > (2 * (rgb[0] + rgb[1] + rgb[2])) / 3 and (rgb[0] - rgb[1]) < 7:
+        if (rgb[0] - rgb[1]) < 8 and rgb[1] > 2:
             return "YELLOW"
         return "RED"
     elif rgb[1] > (rgb[0] + rgb[2]) / 2:
@@ -55,19 +58,43 @@ def rgb_to_color(rgb):
 def drop(position):
     #move claw to position
     base_motor.run_target(135, position)
-    elbow_motor.run_target(60,-28.5)
+    elbow_motor.run_target(60,-29)
 
     #drop brick
     gripper_motor.run_target(200,-90)
 
     #reset claw position
     elbow_motor.run_target(60,0)
-    base_motor.run_target(135, 0)
 
+
+def is_present(position):
+    #try to pick up item at position
+    pick_up(position)
+
+    angle = int(gripper_motor.angle())
+
+    drop(position)
+
+    #claw positions:
+    #-31.5 when holding item
+    #-4 when empty
+    if angle < -10:
+        return True
+    return False
+
+color_pos = {
+    "YELLOW": 90,
+    "RED": 130,
+    "GREEN": 170,
+    "BLUE": 210
+}
 
 while True:
-    input("\nPress ENTER to pick up")
-    pick_up()
-    print("Color: " + read_color())
-    pos = int(input("Drop at position: "))
-    drop(pos)
+    up = int(input("Pick up at position: "))
+    pick_up(up)
+    color = read_color()
+    print(color)
+    drop(color_pos[color])
+    # print("Claw position: " + str(gripper_motor.angle()))
+    # down = int(input("Drop at position: "))
+    # drop(down)
