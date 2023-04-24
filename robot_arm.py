@@ -2,7 +2,7 @@
 
 from pybricks.hubs import EV3Brick
 from pybricks.ev3devices import Motor, TouchSensor, ColorSensor
-from pybricks.parameters import Port, Stop, Direction
+from pybricks.parameters import Port, Stop, Direction, Button
 from pybricks.tools import wait
 
 ev3 = EV3Brick()
@@ -26,15 +26,16 @@ gripper_motor.run_target(200, -90)
 elbow_motor.run_until_stalled(-30,then=Stop.BRAKE,duty_limit=20)
 wait(10)
 elbow_motor.reset_angle(0)
-elbow_motor.run_target(60,61.5)
+elbow_motor.run_target(60,61)
 elbow_motor.reset_angle(0)
 
 
 def pick_up(position):
     #move claw to position
-    base_motor.run_target(135, position)
+    base_motor.run_target(135, position[0])
 
-    elbow_motor.run_target(60,-29)
+    #pick up
+    elbow_motor.run_target(60, position[1])
     gripper_motor.run_until_stalled(200,then=Stop.HOLD, duty_limit=50)
     elbow_motor.run_target(60,0)
 
@@ -63,8 +64,8 @@ def check_color_at(position):
 
 def drop(position):
     #move claw to position
-    base_motor.run_target(135, position)
-    elbow_motor.run_target(60,-29)
+    base_motor.run_target(135, position[0])
+    elbow_motor.run_target(60, position[1])
 
     #drop brick
     gripper_motor.run_target(200,-90)
@@ -89,10 +90,67 @@ def is_present(position):
     return False
 
 
-color_pos = {
-    "YELLOW": 90,
-    "RED": 130,
-    "GREEN": 170,
-    "BLUE": 210,
-    "None": 0
-}
+pick_up_locations = [(0, 0)]
+drop_off_locations = {}
+
+def move_arm():
+    #reset arm
+    elbow_motor.run_target(60, 0)
+    base_motor.run_target(135, 0)
+    ev3.screen.draw_text(25, 50, "Move arm")
+
+    #move arm
+    while True:
+        pressed = ev3.buttons.pressed()
+        if Button.LEFT in pressed:
+            base_motor.run(45)
+        elif Button.RIGHT in pressed:
+            base_motor.run(-45)
+        elif Button.UP in pressed:
+            elbow_motor.run(15)
+        elif Button.DOWN in pressed:
+            elbow_motor.run(-15)
+        elif Button.CENTER in pressed:
+            break
+        else:
+            base_motor.brake()
+            elbow_motor.brake()
+
+    #save arm position
+    pos = base_motor.angle()
+    hgt = elbow_motor.angle()
+
+    #reset arm
+    elbow_motor.run_target(60, 0)
+    base_motor.run_target(135, 0)
+
+    return (pos, hgt)
+
+def set_pick_up():
+    print("Set pick-up with buttons...")
+    pick_up_locations[0] = move_arm()
+    print("Pick-up: " + str(pick_up_locations[0]) + "\n")
+
+def set_drop_off():
+    #max 3
+    if len(drop_off_locations) >= 3:
+        return
+    
+    color = input("Input color: ")
+    print("Set drop-off for " + color + " with buttons...")
+    drop_off_locations[color] = move_arm()
+    print("Drop-off for " + color + ": " + str(drop_off_locations[color]) + "\n")
+
+
+#--------------------------------------------
+
+
+# set_pick_up()
+# set_drop_off()
+# set_drop_off()
+
+# while True:
+#     input("Press enter to pick up")
+#     pick_up(pick_up_locations[0])
+#     drop(drop_off_locations[read_color()])
+#     print()
