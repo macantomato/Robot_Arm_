@@ -45,14 +45,20 @@ def read_color():
 
 def rgb_to_color(rgb):
     if rgb[0] > (rgb[1] + rgb[2]) / 2:
-        if (rgb[0] - rgb[1]) < 8 and rgb[1] > 2:
+        if (rgb[1] >= rgb[0] / 4) and rgb[1] > 1:
             return "YELLOW"
         return "RED"
-    elif rgb[1] > (rgb[0] + rgb[2]) / 2:
+    elif rgb[1] + 1 > (rgb[0] + rgb[2]) / 2:
         return "GREEN"
     elif rgb[2] > (rgb[0] + rgb[1]) / 2:
         return "BLUE"
     return "None"
+
+def check_color_at(position):
+    pick_up(position)
+    color = read_color()
+    drop(position)
+    return color
 
 
 def drop(position):
@@ -82,19 +88,11 @@ def is_present(position):
         return True
     return False
 
+
 color_pos = {
     "YELLOW": 90,
     "RED": 130,
     "GREEN": 170,
-    "BLUE": 210
+    "BLUE": 210,
+    "None": 0
 }
-
-while True:
-    up = int(input("Pick up at position: "))
-    pick_up(up)
-    color = read_color()
-    print(color)
-    drop(color_pos[color])
-    # print("Claw position: " + str(gripper_motor.angle()))
-    # down = int(input("Drop at position: "))
-    # drop(down)
