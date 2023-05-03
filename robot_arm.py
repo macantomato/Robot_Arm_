@@ -26,7 +26,7 @@ gripper_motor.run_target(200, -90)
 elbow_motor.run_until_stalled(-30,then=Stop.BRAKE,duty_limit=20)
 wait(10)
 elbow_motor.reset_angle(0)
-elbow_motor.run_target(60,61)
+elbow_motor.run_target(60,57)
 elbow_motor.reset_angle(0)
 
 
@@ -93,6 +93,7 @@ def is_present(position):
 pick_up_locations = [(0, 0)]
 drop_off_locations = {}
 
+
 def move_arm():
     #reset arm
     elbow_motor.run_target(60, 0)
@@ -142,15 +143,23 @@ def set_drop_off():
     print("Drop-off for " + color + ": " + str(drop_off_locations[color]) + "\n")
 
 
+def setup_pickup_dropoffs():
+    set_pick_up()
+    set_drop_off()
+    set_drop_off()
+
+
 #--------------------------------------------
 
 
-# set_pick_up()
-# set_drop_off()
-# set_drop_off()
+# setup_pickup_dropoffs()
 
 # while True:
 #     input("Press enter to pick up")
 #     pick_up(pick_up_locations[0])
 #     drop(drop_off_locations[read_color()])
 #     print()
+
+# pos = int(input("Check at pos: "))
+# hgt = int(input("Check at height: "))
+# print(is_present((pos, hgt)))
