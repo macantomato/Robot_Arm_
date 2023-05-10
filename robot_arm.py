@@ -4,6 +4,7 @@ from pybricks.hubs import EV3Brick
 from pybricks.ev3devices import Motor, TouchSensor, ColorSensor
 from pybricks.parameters import Port, Stop, Direction, Button
 from pybricks.tools import wait
+from pybricks.messaging import BluetoothMailboxServer, BluetoothMailboxClient, TextMailbox
 
 ev3 = EV3Brick()
 gripper_motor = Motor(Port.A)
@@ -28,11 +29,44 @@ wait(10)
 elbow_motor.reset_angle(0)
 elbow_motor.run_target(60,57)
 elbow_motor.reset_angle(0)
+elbow_motor.run_target(60,15)
+
+
+#connect to other robot
+is_server = True
+ev3.screen.draw_text(0, 40, "Left: Client")
+ev3.screen.draw_text(0, 65, "Right: Server")
+while True:
+    pressed = ev3.buttons.pressed()
+    if Button.LEFT in pressed:
+        is_server = False
+        break
+    elif Button.RIGHT in pressed:
+        is_server = True
+        break
+ev3.screen.clear()
+
+server = BluetoothMailboxServer()
+client = BluetoothMailboxClient()
+
+if is_server:   
+    mbox = TextMailbox('greeting', server)
+    server.wait_for_connection()
+else:
+    SERVER = 'ev3dev'  
+    mbox = TextMailbox('greeting', client)
+    client.connect(SERVER)
+
+
+#--------------------------------------------
 
 
 def pick_up(position):
+    #move claw above
+    elbow_motor.run_target(60,15)
+
     #move claw to position
-    base_motor.run_target(135, position[0])
+    base_motor.run_target(150, position[0])
 
     #pick up
     elbow_motor.run_target(60, position[1])
@@ -41,6 +75,10 @@ def pick_up(position):
 
 
 def read_color():
+    #check if block is being held
+    if not is_present():
+        return "None"
+    
     rgb = color_sensor.rgb()
     return rgb_to_color(rgb)
 
@@ -62,9 +100,12 @@ def check_color_at(position):
     return color
 
 
-def drop(position):
+def drop(position): #redundant
+    #move claw above
+    elbow_motor.run_target(60,15)
+
     #move claw to position
-    base_motor.run_target(135, position[0])
+    base_motor.run_target(150, position[0])
     elbow_motor.run_target(60, position[1])
 
     #drop brick
@@ -74,17 +115,8 @@ def drop(position):
     elbow_motor.run_target(60,0)
 
 
-def is_present(position):
-    #try to pick up item at position
-    pick_up(position)
-
+def is_present():
     angle = int(gripper_motor.angle())
-
-    drop(position)
-
-    #claw positions:
-    #-31.5 when holding item
-    #-4 when empty
     if angle < -10:
         return True
     return False
@@ -92,25 +124,26 @@ def is_present(position):
 
 pick_up_locations = [(0, 0)]
 drop_off_locations = {}
+amt_set = 0
 
 
 def move_arm():
     #reset arm
-    elbow_motor.run_target(60, 0)
-    base_motor.run_target(135, 0)
-    ev3.screen.draw_text(25, 50, "Move arm")
+    elbow_motor.run_target(60, 15)
+    base_motor.run_target(150, 0)
+    ev3.screen.draw_text(0, 50, "Move arm")
 
     #move arm
     while True:
         pressed = ev3.buttons.pressed()
         if Button.LEFT in pressed:
-            base_motor.run(45)
+            base_motor.run(50)
         elif Button.RIGHT in pressed:
-            base_motor.run(-45)
+            base_motor.run(-50)
         elif Button.UP in pressed:
-            elbow_motor.run(15)
+            elbow_motor.run(20)
         elif Button.DOWN in pressed:
-            elbow_motor.run(-15)
+            elbow_motor.run(-20)
         elif Button.CENTER in pressed:
             break
         else:
@@ -122,44 +155,88 @@ def move_arm():
     hgt = elbow_motor.angle()
 
     #reset arm
-    elbow_motor.run_target(60, 0)
-    base_motor.run_target(135, 0)
+    elbow_motor.run_target(60, 15)
+    base_motor.run_target(150, 0)
+
+    ev3.screen.clear()
 
     return (pos, hgt)
 
 def set_pick_up():
-    print("Set pick-up with buttons...")
     pick_up_locations[0] = move_arm()
-    print("Pick-up: " + str(pick_up_locations[0]) + "\n")
+    #default positions
+    drop_off_locations["RED"] = pick_up_locations[0]
+    drop_off_locations["YELLOW"] = pick_up_locations[0]
+    drop_off_locations["GREEN"] = pick_up_locations[0]
+    drop_off_locations["BLUE"] = pick_up_locations[0]
 
 def set_drop_off():
     #max 3
-    if len(drop_off_locations) >= 3:
+    global amt_set
+    if amt_set >= 3:
         return
-    
-    color = input("Input color: ")
-    print("Set drop-off for " + color + " with buttons...")
+    amt_set += 1
+
+    color = check_color_at(pick_up_locations[0])
     drop_off_locations[color] = move_arm()
-    print("Drop-off for " + color + ": " + str(drop_off_locations[color]) + "\n")
 
 
 def setup_pickup_dropoffs():
+    wait_for_press("Press: set pick-up")
     set_pick_up()
+    wait_for_press("Press: set drop-off")
     set_drop_off()
+    wait_for_press("Press: set drop-off")
     set_drop_off()
+
+
+def wait_for_press(text):
+    while True:
+        ev3.screen.draw_text(0, 50, text)
+        if Button.CENTER in ev3.buttons.pressed():
+            ev3.screen.clear()
+            wait(250)
+            return
+
+
+def check_pick_up():
+    pick_up(pick_up_locations[0])
+
+    color = read_color()
+    if (color == "None"):
+        #open claw if no brick
+        gripper_motor.run_target(200,-90) 
+        return False
+    
+    drop_off = drop_off_locations[color]
+    drop(drop_off)
+    #give to other robot
+    if drop_off == pick_up_locations[0]:
+        return True
+    
+    return False
 
 
 #--------------------------------------------
 
 
-# setup_pickup_dropoffs()
+setup_pickup_dropoffs()
 
+if is_server:
+    while True:    
+        #wait_for_press("Press: pick up")
+        wait(5000)
+        if check_pick_up():
+            elbow_motor.run_target(60, 40)
+            mbox.send('pick')
+            mbox.wait_new()
+else:
+    while True:
+        elbow_motor.run_target(60, 40)
+        mbox.wait_new()
+        check_pick_up()
+        mbox.send('done')
 # while True:
-#     input("Press enter to pick up")
-#     pick_up(pick_up_locations[0])
-#     drop(drop_off_locations[read_color()])
-#     print()
-
-# pos = int(input("Check at pos: "))
-# hgt = int(input("Check at height: "))
-# print(is_present((pos, hgt)))
+#     wait(5000)
+#     if check_pick_up():
+#         elbow_motor.run_target(60, 40)
