@@ -29,7 +29,7 @@ gripper_motor.run_target(200, -90)
 elbow_motor.run_until_stalled(-30,then=Stop.BRAKE,duty_limit=20)
 wait(10)
 elbow_motor.reset_angle(0)
-elbow_motor.run_target(60,58)
+elbow_motor.run_target(60,59)
 elbow_motor.reset_angle(0)
 elbow_motor.run_target(60,15)
 
