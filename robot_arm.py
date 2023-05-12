@@ -20,6 +20,8 @@ while not touch_sensor.pressed():
     wait(10)
 base_motor.reset_angle(0)
 base_motor.hold()
+base_motor.run_target(150, 90)
+base_motor.hold()
 
 gripper_motor.run_until_stalled(200, then=Stop.COAST, duty_limit=50)
 gripper_motor.reset_angle(0)
@@ -27,7 +29,7 @@ gripper_motor.run_target(200, -90)
 elbow_motor.run_until_stalled(-30,then=Stop.BRAKE,duty_limit=20)
 wait(10)
 elbow_motor.reset_angle(0)
-elbow_motor.run_target(60,57)
+elbow_motor.run_target(60,58)
 elbow_motor.reset_angle(0)
 elbow_motor.run_target(60,15)
 
@@ -53,9 +55,8 @@ if is_server:
     mbox = TextMailbox('greeting', server)
     server.wait_for_connection()
 else:
-    SERVER = 'ev3dev'  
     mbox = TextMailbox('greeting', client)
-    client.connect(SERVER)
+    client.connect('ev3dev')
 
 
 #--------------------------------------------
@@ -184,6 +185,7 @@ def set_drop_off():
 def setup_pickup_dropoffs():
     wait_for_press("Press: set pick-up")
     set_pick_up()
+    move_clear()
     wait_for_press("Press: set drop-off")
     set_drop_off()
     wait_for_press("Press: set drop-off")
@@ -206,15 +208,23 @@ def check_pick_up():
     if (color == "None"):
         #open claw if no brick
         gripper_motor.run_target(200,-90) 
+        elbow_motor.run_target(60, 15)
         return False
     
     drop_off = drop_off_locations[color]
     drop(drop_off)
+
+    elbow_motor.run_target(60, 15)
+
     #give to other robot
     if drop_off == pick_up_locations[0]:
         return True
     
     return False
+
+def move_clear():
+    elbow_motor.run_target(60, 60)
+    base_motor.run_target(150, 100)
 
 
 #--------------------------------------------
@@ -227,16 +237,18 @@ if is_server:
         #wait_for_press("Press: pick up")
         wait(5000)
         if check_pick_up():
-            elbow_motor.run_target(60, 40)
+            move_clear()
             mbox.send('pick')
+            mbox.send('')
             mbox.wait_new()
 else:
     while True:
-        elbow_motor.run_target(60, 40)
+        move_clear()
         mbox.wait_new()
         check_pick_up()
         mbox.send('done')
+        mbox.send('')
 # while True:
 #     wait(5000)
 #     if check_pick_up():
-#         elbow_motor.run_target(60, 40)
+#         move_clear()
