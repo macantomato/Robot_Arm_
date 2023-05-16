@@ -20,6 +20,7 @@ This is where you explain how to make the project run. What is your startup proc
 
 You should also describe how to operate your program. Does it need manual input before it starts picking up and sorting the items?
 
+- Pair the two robots with Bluetooth
 - Start the program on both robots and wait for the robots to finish the startup procedure
 - Set one robot as server, then the other as client
 - Set the pick-up zone and drop-off zones for the client robot
@@ -39,6 +40,6 @@ You should also describe how to operate your program. Does it need manual input 
 - [x] US_6: As a customer, I want the robot to be able to pick up items from elevated positions.
 - [x] US_7: As a customer, I want to be able to calibrate maximum of three different colors and assign them to specific drop-off zones based on color.
 - [x] US_9: As a customer, I want the robot to check the pickup location periodically to see if a new item has arrived.
-- [ ] US_10: As a customer, I want the robots to sort items at a specific time.
+- [x] US_10: As a customer, I want the robots to sort items at a specific time.
 - [x] US_11: As a customer, I want two robots to communicate and work together on items sorting without colliding with each other.
 - [x] US_12: As a customer, I want to be able to manually set the locations and heights of one pick-up zone and two drop-off zones. (Implemented either by using buttons)
